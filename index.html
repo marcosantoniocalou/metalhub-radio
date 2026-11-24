@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<meta name="theme-color" content="#0a0305">
+<title>Metal Hub Rádio</title>
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@400;500;600;700&family=Metal+Mania&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#050305;--red:#ff1226;--red2:#ff4d5c;--txt:#ececf2;--dim:#9a9aaa;--line:rgba(255,60,75,.18);
+  --glowR:0 0 6px rgba(255,18,38,.9),0 0 22px rgba(255,18,38,.55),0 0 60px rgba(255,18,38,.25);--nav:64px;
+  --st:env(safe-area-inset-top,0px);--sb:env(safe-area-inset-bottom,0px)}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html{background:var(--bg)}
+html,body{margin:0;height:100%;color:var(--txt);font-family:"Chakra Petch",system-ui,sans-serif;font-size:15px;overflow:hidden;overscroll-behavior:none}
+body::before{content:"";position:fixed;inset:0;background:url(bg.jpg) 50% 30%/cover no-repeat;z-index:-2}
+body::after{content:"";position:fixed;inset:0;background:linear-gradient(180deg,rgba(5,3,5,.35) 0%,rgba(5,3,5,.55) 45%,rgba(5,3,5,.92) 100%);z-index:-1}
+button{font:inherit;color:inherit;cursor:pointer}
+header{position:fixed;top:0;left:0;right:0;padding:calc(var(--st) + 10px) 16px 8px;display:flex;align-items:center;gap:10px;z-index:5;background:linear-gradient(180deg,rgba(5,3,5,.9),rgba(5,3,5,0))}
+.logo{font-family:"Metal Mania",serif;font-size:28px;letter-spacing:1px;color:#fff;text-shadow:var(--glowR);line-height:1}
+.logo small{font-family:"Chakra Petch";font-size:12px;letter-spacing:4px;color:var(--red2);text-shadow:none;margin-left:6px;vertical-align:middle}
+main{position:fixed;inset:0;padding:calc(var(--st) + 58px) 0 calc(var(--nav) + var(--sb) + 74px)}
+.view{position:absolute;inset:calc(var(--st) + 58px) 0 calc(var(--nav) + var(--sb) + 74px);display:none;flex-direction:column;overflow:hidden}
+.view.on{display:flex}
+.scroll{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:0 12px 12px}
+h2{font-family:"Metal Mania",serif;font-weight:400;font-size:22px;letter-spacing:2px;margin:6px 16px 10px;color:#fff;text-shadow:0 0 12px rgba(255,18,38,.7)}
+.hint{color:var(--dim);text-align:center;padding:30px 20px;line-height:1.6}
+/* tocando */
+#vNow{align-items:center;justify-content:center;padding:0 18px;text-align:center}
+#logoBox{width:120px;height:120px;border-radius:50%;display:grid;place-items:center;background:rgba(10,3,5,.75);border:2px solid var(--red);box-shadow:var(--glowR);overflow:hidden;flex:none}
+#logoBox img{width:78%;height:78%;object-fit:contain;display:none}#logoBox.has img{display:block}#logoBox.has span{display:none}
+#logoBox span{font-family:"Metal Mania";font-size:40px;color:#fff;text-shadow:var(--glowR)}
+#nowT{font-size:24px;font-weight:700;margin:18px 0 4px;line-height:1.2;text-shadow:0 2px 10px #000}
+#nowA{color:var(--red2);font-size:14px;text-shadow:0 2px 8px #000}
+#wave{width:100%;height:150px;margin:18px 0 6px}
+#nowState{font-size:12px;letter-spacing:3px;color:var(--dim);height:16px}
+/* listas */
+.chips{display:flex;gap:7px;overflow-x:auto;padding:0 12px 10px;flex:none;scrollbar-width:none}.chips::-webkit-scrollbar{display:none}
+.chip{flex:none;padding:7px 12px;border-radius:18px;border:1px solid rgba(255,18,38,.45);background:rgba(15,4,7,.75);font-size:13px;white-space:nowrap}
+.chip.on{border-color:var(--red);box-shadow:0 0 12px -2px var(--red);color:#fff;background:rgba(255,18,38,.2)}
+.sbox{display:flex;gap:8px;padding:0 12px 10px;flex:none}
+.field{flex:1;min-width:0;background:rgba(10,4,6,.85);border:1px solid rgba(255,18,38,.45);border-radius:10px;color:#fff;padding:11px 12px;font:inherit;font-size:16px;outline:none}
+.field:focus{border-color:var(--red);box-shadow:0 0 12px -3px var(--red)}
+.btn{background:rgba(255,18,38,.18);border:1px solid var(--red);border-radius:10px;padding:0 14px;color:#fff;font-weight:600}
+.row{display:flex;align-items:center;gap:11px;padding:10px 8px;border-bottom:1px solid var(--line);background:rgba(8,3,5,.55)}
+.row:first-child{border-radius:10px 10px 0 0}.row:active{background:rgba(255,18,38,.2)}
+.row.cur{background:linear-gradient(90deg,rgba(255,18,38,.32),rgba(255,18,38,.08));box-shadow:inset 3px 0 0 var(--red)}
+.ic{width:44px;height:44px;border-radius:8px;flex:none;background:#0c0c0e;border:1px solid rgba(255,18,38,.35);display:grid;place-items:center;overflow:hidden;font-size:11px;font-weight:700;color:#ff6a1a}
+.ic img{width:100%;height:100%;object-fit:contain;padding:3px}
+.tt{flex:1;min-width:0}.t1{font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.t2{font-size:12px;color:var(--dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:2px}
+.star{flex:none;width:40px;height:40px;border:0;background:none;font-size:22px;color:#666}.star.on{color:#ffcf3d;text-shadow:0 0 10px rgba(255,200,60,.7)}
+.sec{font-size:12px;letter-spacing:2px;color:var(--red2);font-weight:700;text-transform:uppercase;margin:6px 4px 8px}
+/* mapa */
+#vMap{padding:0 10px}
+#mapBox{position:relative;flex:1;border-radius:12px;overflow:hidden;border:1px solid rgba(255,18,38,.5);box-shadow:var(--glowR);background:radial-gradient(ellipse at 50% 40%,rgba(20,5,7,.92),rgba(5,2,3,.96) 75%);touch-action:none}
+#mapCv{position:absolute;inset:0;width:100%;height:100%}
+#mapMsg{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);color:var(--dim);text-align:center;width:80%;pointer-events:none}
+#mapZoom{position:absolute;right:10px;top:10px;display:flex;flex-direction:column;gap:8px}
+#mapZoom button{width:42px;height:42px;border-radius:10px;border:1px solid var(--red);background:rgba(10,4,6,.88);font-size:18px}
+#mapLeg{position:absolute;left:10px;bottom:8px;font-size:11.5px;color:var(--dim);pointer-events:none;text-shadow:0 0 6px #000;right:10px}
+#sheet{position:absolute;left:0;right:0;bottom:0;max-height:62%;display:none;flex-direction:column;background:rgba(10,3,5,.97);border-top:1px solid var(--red);box-shadow:0 -6px 24px rgba(255,18,38,.35);border-radius:14px 14px 0 0;z-index:3}
+#sheet.on{display:flex}#sheet .hd{display:flex;align-items:center;padding:10px 12px;gap:8px;border-bottom:1px solid var(--line)}#sheet .hd b{flex:1}
+#sheet .x{width:36px;height:36px;border:1px solid var(--line);border-radius:8px;background:none}
+#sheet .scroll{padding:0 6px 6px}
+/* mini player + nav */
+#mini{position:fixed;left:8px;right:8px;bottom:calc(var(--nav) + var(--sb) + 6px);height:64px;display:flex;align-items:center;gap:10px;padding:0 8px 0 10px;border-radius:14px;background:rgba(14,4,7,.94);border:1px solid rgba(255,18,38,.6);box-shadow:0 0 18px rgba(255,18,38,.35);z-index:6}
+#mini .tt{cursor:pointer}
+#play{width:50px;height:50px;border-radius:50%;border:2px solid var(--red);background:radial-gradient(circle,#3a0710,#140306);box-shadow:var(--glowR);font-size:20px;flex:none;display:grid;place-items:center}
+#play.load{animation:pulse 1s infinite}@keyframes pulse{50%{opacity:.45}}
+#miniStar{width:40px}
+nav{position:fixed;left:0;right:0;bottom:0;height:calc(var(--nav) + var(--sb));padding-bottom:var(--sb);display:flex;background:rgba(6,2,4,.97);border-top:1px solid rgba(255,18,38,.4);z-index:6}
+nav button{flex:1;border:0;background:none;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;font-size:11px;color:var(--dim);letter-spacing:.5px}
+nav button i{font-style:normal;font-size:20px;filter:grayscale(1) brightness(1.4)}
+nav button.on{color:#fff;text-shadow:0 0 10px var(--red)}nav button.on i{filter:none}
+#toast{position:fixed;left:50%;bottom:calc(var(--nav) + var(--sb) + 84px);transform:translateX(-50%);background:#12080b;border:1px solid var(--red);padding:9px 16px;border-radius:10px;box-shadow:var(--glowR);opacity:0;pointer-events:none;transition:.25s;z-index:9;width:max-content;max-width:88vw;text-align:center;font-size:14px}
+#toast.on{opacity:1}
+</style>
+</head>
+<body>
+<header><div class="logo">Metal Hub<small>RÁDIO</small></div></header>
+
+<section class="view on" id="vNow">
+  <div id="logoBox"><img id="nowImg" alt=""><span>MH</span></div>
+  <div id="nowT">Escolha uma rádio</div>
+  <div id="nowA">Busque, abra as favoritas ou o mapa</div>
+  <canvas id="wave"></canvas>
+  <div id="nowState"></div>
+</section>
+
+<section class="view" id="vSearch">
+  <div class="sbox"><input class="field" id="q" type="search" enterkeyhint="search" placeholder="Nome, cidade ou estilo"><button class="btn" id="qGo">🔍</button></div>
+  <div class="chips" id="chips"></div>
+  <div class="scroll" id="sList"><div class="hint">Busque uma rádio ou toque num atalho acima.</div></div>
+</section>
+
+<section class="view" id="vFav"><h2>Favoritas</h2><div class="scroll" id="fList"></div></section>
+<section class="view" id="vRec"><h2>Recentes</h2><div class="scroll" id="rList"></div></section>
+
+<section class="view" id="vMap">
+  <div id="mapBox"><canvas id="mapCv"></canvas><div id="mapMsg"></div>
+    <div id="mapZoom"><button data-z="in">＋</button><button data-z="out">－</button><button data-z="home">⟲</button></div>
+    <div id="mapLeg"></div>
+    <div id="sheet"><div class="hd"><b id="shT"></b><button class="x" id="shX">✕</button></div><div class="scroll" id="shL"></div></div>
+  </div>
+</section>
+
+<div id="mini">
+  <button id="play" aria-label="Tocar ou pausar">▶</button>
+  <div class="tt" id="miniTT"><div class="t1" id="miniT">Nada tocando</div><div class="t2" id="miniA">Metal Hub Rádio</div></div>
+  <button class="star" id="miniStar" aria-label="Favoritar">☆</button>
+</div>
+
+<nav>
+  <button data-v="vNow" class="on"><i>📻</i>Tocando</button>
+  <button data-v="vSearch"><i>🔍</i>Buscar</button>
+  <button data-v="vFav"><i>⭐</i>Favoritas</button>
+  <button data-v="vRec"><i>🕘</i>Recentes</button>
+  <button data-v="vMap"><i>🗺️</i>Mapa</button>
+</nav>
+<div id="toast"></div>
+<audio id="aud" preload="none"></audio>
+
+<script>
+const $=id=>document.getElementById(id);
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const ls={get(k,d){try{const v=localStorage.getItem('mhr_'+k);return v==null?d:JSON.parse(v)}catch(e){return d}},set(k,v){try{localStorage.setItem('mhr_'+k,JSON.stringify(v))}catch(e){}}};
+let toastT;function toast(m){const t=$('toast');t.textContent=m;t.classList.add('on');clearTimeout(toastT);toastT=setTimeout(()=>t.classList.remove('on'),3200)}
+const cmp=(a,b)=>String(a||'').localeCompare(String(b||''),'pt-BR',{sensitivity:'base'});
+
+/* ---------- Radio Browser ---------- */
+const RB=['de1','de2','fi1','nl1','at1'].map(h=>`https://${h}.api.radio-browser.info`);let rbOk=0;
+async function rb(path){let err;for(let k=0;k<RB.length;k++){const i=(rbOk+k)%RB.length;
+  try{const r=await fetch(RB[i]+path);if(!r.ok)throw new Error('HTTP '+r.status);rbOk=i;return await r.json()}catch(e){err=e}}throw err||new Error('sem resposta')}
+const okUrl=u=>/^https:/i.test(u||'');   // celular em pagina segura so toca transmissoes https
+const mk=s=>({id:s.stationuuid,name:String(s.name||'Rádio').trim(),url:s.url_resolved||s.url,city:[s.state,s.country==='Brazil'?'':s.country].filter(Boolean).join(', ')||s.country||'',
+  tags:String(s.tags||'').split(',').filter(Boolean).slice(0,2).join(', '),img:/^https:/.test(s.favicon||'')?s.favicon:'',lat:s.geo_lat,lon:s.geo_long});
+const sub=r=>[r.city,r.tags].filter(Boolean).join(' · ');
+
+/* ---------- estado ---------- */
+let favs=ls.get('favs',[]),recs=ls.get('recs',[]),cur=ls.get('last',null),playing=false,view=[];
+const isFav=r=>!!r&&favs.some(f=>f.id===r.id);
+function toggleFav(r){if(!r)return;if(isFav(r)){favs=favs.filter(f=>f.id!==r.id);toast('Tirada das favoritas')}else{favs.unshift(r);toast('⭐ Salva nas favoritas')}ls.set('favs',favs);renderAll()}
+
+/* ---------- player ---------- */
+const aud=$('aud');let tok=0;
+async function play(r){if(!r)return;cur=r;ls.set('last',r);const my=++tok;
+  recs=[r,...recs.filter(x=>x.id!==r.id)].slice(0,30);ls.set('recs',recs);
+  aud.src=r.url;setState('load');renderAll();mediaMeta();
+  rb('/json/url/'+encodeURIComponent(r.id)).catch(()=>{});
+  try{await aud.play();if(my===tok)setState('play')}
+  catch(e){if(my!==tok||e.name==='AbortError')return;setState('stop');toast('Esta rádio não respondeu. Tente outra.')}}
+function pause(){aud.pause();aud.removeAttribute('src');aud.load();setState('stop')}   // ao voltar, retoma ao vivo
+function toggle(){if(!cur)return showView('vSearch');playing||$('play').classList.contains('load')?pause():play(cur)}
+function setState(s){playing=s==='play';$('play').classList.toggle('load',s==='load');$('play').textContent=s==='stop'?'▶':'❚❚';
+  $('nowState').textContent=s==='load'?'CONECTANDO…':s==='play'?'● AO VIVO':'';if('mediaSession' in navigator)navigator.mediaSession.playbackState=s==='stop'?'paused':'playing'}
+aud.addEventListener('playing',()=>setState('play'));aud.addEventListener('waiting',()=>playing&&setState('load'));
+aud.addEventListener('error',()=>{if(aud.getAttribute('src')&&cur){setState('stop');toast('A rádio caiu ou está fora do ar.')}});
+$('play').onclick=toggle;$('miniStar').onclick=()=>toggleFav(cur);$('miniTT').onclick=()=>showView('vNow');
+/* tela bloqueada / notificacao */
+function mediaMeta(){if(!('mediaSession' in navigator)||!cur)return;
+  navigator.mediaSession.metadata=new MediaMetadata({title:cur.name,artist:sub(cur)||'Rádio ao vivo',album:'Metal Hub Rádio',
+    artwork:[...(cur.img?[{src:cur.img,sizes:'256x256'}]:[]),{src:'icon-512.png',sizes:'512x512',type:'image/png'}]})}
+if('mediaSession' in navigator){const ms=navigator.mediaSession;
+  ms.setActionHandler('play',()=>play(cur));ms.setActionHandler('pause',pause);ms.setActionHandler('stop',pause);
+  const step=d=>{const L=favs.length?favs:recs;if(!L.length)return;const i=L.findIndex(x=>cur&&x.id===cur.id);play(L[(i+d+L.length)%L.length])};
+  ms.setActionHandler('nexttrack',()=>step(1));ms.setActionHandler('previoustrack',()=>step(-1))}
+
+/* ---------- onda sonora (pulso animado) ---------- */
+const wv=$('wave'),wx=wv.getContext('2d');
+function drawWave(){requestAnimationFrame(drawWave);if(!$('vNow').classList.contains('on'))return;
+  const d=devicePixelRatio||1,w=wv.clientWidth*d,h=wv.clientHeight*d;if(wv.width!==w||wv.height!==h){wv.width=w;wv.height=h}
+  wx.clearRect(0,0,w,h);const T=performance.now()/1000,mid=h/2,N=64,on=playing?1:0.08,beat=Math.pow(Math.max(0,Math.sin(T*Math.PI*2.1)),8);
+  const amp=i=>{const f=i/N;return on*(0.55-f*0.35)*(0.65+0.35*Math.sin(T*3.1+i*0.9)*Math.sin(T*1.7+i*0.37))+on*beat*0.35*(1-f)};
+  const g=wx.createLinearGradient(0,0,w,0);g.addColorStop(0,'rgba(255,18,38,.15)');g.addColorStop(.5,'#ff1226');g.addColorStop(1,'rgba(255,18,38,.15)');
+  wx.shadowColor='#ff1226';wx.shadowBlur=14*d;wx.fillStyle=g;wx.beginPath();wx.moveTo(0,mid);
+  for(let i=0;i<=N;i++){const x=w/2+(i/N)*w/2;wx.lineTo(x,mid-amp(i)*mid*.92)}
+  for(let i=N;i>=0;i--){const x=w/2+(i/N)*w/2;wx.lineTo(x,mid+amp(i)*mid*.92)}wx.closePath();wx.fill();
+  wx.beginPath();wx.moveTo(w/2,mid);
+  for(let i=0;i<=N;i++){const x=w/2-(i/N)*w/2;wx.lineTo(x,mid-amp(i)*mid*.92)}
+  for(let i=N;i>=0;i--){const x=w/2-(i/N)*w/2;wx.lineTo(x,mid+amp(i)*mid*.92)}wx.closePath();wx.fill();wx.shadowBlur=0}
+requestAnimationFrame(drawWave);
+
+/* ---------- listas ---------- */
+const rowHTML=(r,i,l)=>`<div class="row${cur&&cur.id===r.id?' cur':''}" data-l="${l}" data-i="${i}"><span class="ic">${r.img?`<img src="${esc(r.img)}" alt="" loading="lazy" onerror="this.remove()">`:'FM'}</span>
+  <div class="tt"><div class="t1">${esc(r.name)}</div><div class="t2">${esc(sub(r))}</div></div><button class="star${isFav(r)?' on':''}" data-star>${isFav(r)?'★':'☆'}</button></div>`;
+const listOf=l=>l==='s'?view:l==='f'?favs:l==='r'?recs:sheetL;
+document.addEventListener('click',e=>{const row=e.target.closest('.row[data-l]');if(!row)return;const r=listOf(row.dataset.l)[+row.dataset.i];if(!r)return;
+  if(e.target.closest('[data-star]'))toggleFav(r);else{play(r);if(row.dataset.l==='m')$('sheet').classList.remove('on')}});
+function renderAll(){
+  $('miniT').textContent=cur?cur.name:'Nada tocando';$('miniA').textContent=cur?sub(cur)||'Rádio ao vivo':'Metal Hub Rádio';
+  $('miniStar').textContent=isFav(cur)?'★':'☆';$('miniStar').classList.toggle('on',isFav(cur));
+  $('nowT').textContent=cur?cur.name:'Escolha uma rádio';$('nowA').textContent=cur?sub(cur):'Busque, abra as favoritas ou o mapa';
+  $('logoBox').classList.toggle('has',!!(cur&&cur.img));$('nowImg').src=cur&&cur.img||'';
+  if(view.length)$('sList').innerHTML=`<div class="sec">${esc(viewHead)} · ${view.length}</div>`+view.map((r,i)=>rowHTML(r,i,'s')).join('');
+  $('fList').innerHTML=favs.length?favs.map((r,i)=>rowHTML(r,i,'f')).join(''):'<div class="hint">Toque na ☆ de uma rádio para guardar aqui.</div>';
+  $('rList').innerHTML=recs.length?recs.map((r,i)=>rowHTML(r,i,'r')).join(''):'<div class="hint">As rádios que você ouvir aparecem aqui.</div>';
+  if(mp.on)mapDraw()}
+$('nowImg').onerror=()=>$('logoBox').classList.remove('has');
+
+/* ---------- busca ---------- */
+const CHIPS=[['🇧🇷 Mais ouvidas','top'],['Rock','tag:rock'],['Metal','tag:metal'],['Heavy Metal','tag:heavy metal'],['Hard Rock','tag:hard rock'],['Classic Rock','tag:classic rock'],['Kiss FM','kiss fm'],['🌎 Mundo','world']];
+let viewHead='',brOnly=ls.get('br',true);
+function renderChips(on){$('chips').innerHTML=`<button class="chip${brOnly?' on':''}" data-br>🇧🇷 Só Brasil</button>`+CHIPS.map(c=>`<button class="chip${on===c[1]?' on':''}" data-c="${esc(c[1])}" data-l="${esc(c[0])}">${esc(c[0])}</button>`).join('')}
+async function search(q,label){q=String(q||'').trim();if(!q)return;renderChips(q);viewHead=label||'“'+q+'”';$('sList').innerHTML='<div class="hint">Buscando…</div>';$('q').blur();
+  const base='&hidebroken=true&is_https=true&order=clickcount&reverse=true&limit=80'+(brOnly&&q!=='world'?'&countrycode=BR':'');
+  try{let j;
+    if(q==='top')j=await rb('/json/stations/search?countrycode=BR&hidebroken=true&is_https=true&order=clickcount&reverse=true&limit=80');
+    else if(q==='world')j=await rb('/json/stations/search?hidebroken=true&is_https=true&order=clickcount&reverse=true&limit=80');
+    else if(q.startsWith('tag:'))j=await rb('/json/stations/search?tag='+encodeURIComponent(q.slice(4))+base);
+    else{const [a,b]=await Promise.all([rb('/json/stations/search?name='+encodeURIComponent(q)+base),rb('/json/stations/search?state='+encodeURIComponent(q)+base).catch(()=>[])]);
+      const seen=new Set();j=[...a,...b].filter(s=>!seen.has(s.stationuuid)&&seen.add(s.stationuuid))}
+    view=(j||[]).filter(s=>okUrl(s.url_resolved||s.url)).map(mk);
+    if(!view.length){$('sList').innerHTML=`<div class="hint">Nenhuma rádio encontrada para ${esc(viewHead)}.</div>`;return}
+    renderAll();$('sList').scrollTop=0}
+  catch(e){$('sList').innerHTML=`<div class="hint">Sem conexão com o servidor de rádios (${esc(e.message)}).</div>`}}
+$('chips').onclick=e=>{if(e.target.closest('[data-br]')){brOnly=!brOnly;ls.set('br',brOnly);renderChips();const v=$('q').value.trim();if(v)search(v);return}
+  const c=e.target.closest('[data-c]');if(c){$('q').value='';search(c.dataset.c,c.dataset.l)}};
+$('q').addEventListener('keydown',e=>{if(e.key==='Enter')search(e.target.value)});$('qGo').onclick=()=>search($('q').value);
+renderChips();
+
+/* ---------- navegacao ---------- */
+function showView(v){document.querySelectorAll('.view').forEach(x=>x.classList.toggle('on',x.id===v));document.querySelectorAll('nav button').forEach(b=>b.classList.toggle('on',b.dataset.v===v));
+  mp.on=v==='vMap';if(mp.on)mapOpen()}
+document.querySelector('nav').onclick=e=>{const b=e.target.closest('[data-v]');if(b)showView(b.dataset.v)};
+
+/* ---------- mapa do Brasil ---------- */
+const BR_URLS=['https://cdn.jsdelivr.net/gh/codeforgermany/click_that_hood@main/public/data/brazil-states.geojson','https://raw.githubusercontent.com/codeforgermany/click_that_hood/main/public/data/brazil-states.geojson'];
+const UF={'acre':'AC','alagoas':'AL','amapa':'AP','amazonas':'AM','bahia':'BA','ceara':'CE','distrito federal':'DF','espirito santo':'ES','goias':'GO','maranhao':'MA','mato grosso':'MT','mato grosso do sul':'MS','minas gerais':'MG','para':'PA','paraiba':'PB','parana':'PR','pernambuco':'PE','piaui':'PI','rio de janeiro':'RJ','rio grande do norte':'RN','rio grande do sul':'RS','rondonia':'RO','roraima':'RR','santa catarina':'SC','sao paulo':'SP','sergipe':'SE','tocantins':'TO'};
+const COS=Math.cos(15*Math.PI/180),prj=(lon,lat)=>[lon*COS,-lat];   // equiretangular ajustada ao Brasil
+const BB={x0:-74*COS,x1:-34*COS,y0:-5.5,y1:34};
+const mp={on:false,st:null,uf:null,lab:[],k:1,x:0,y:0,W:0,H:0,d:1,cl:[],busy:false};
+const idb={db:null,async open(){if(this.db)return this.db;return this.db=await new Promise((ok,no)=>{const r=indexedDB.open('mhradio',1);r.onupgradeneeded=()=>r.result.createObjectStore('kv');r.onsuccess=()=>ok(r.result);r.onerror=()=>no(r.error)})},
+  async get(k){try{const db=await this.open();return await new Promise(ok=>{const q=db.transaction('kv').objectStore('kv').get(k);q.onsuccess=()=>ok(q.result);q.onerror=()=>ok(null)})}catch(e){return null}},
+  async set(k,v){try{const db=await this.open();db.transaction('kv','readwrite').objectStore('kv').put(v,k)}catch(e){}}};
+async function mapOpen(){mapResize();if(mp.busy)return;
+  if(!mp.uf){mp.busy=true;$('mapMsg').textContent='Carregando o mapa…';
+    let gj=await idb.get('uf');if(!gj){for(const u of BR_URLS){try{const r=await fetch(u);if(r.ok){gj=await r.json();break}}catch(e){}}if(gj)idb.set('uf',gj)}
+    if(gj){const P=new Path2D();mp.lab=[];(gj.features||[]).forEach(f=>{const g=f.geometry;if(!g)return;const polys=g.type==='Polygon'?[g.coordinates]:g.type==='MultiPolygon'?g.coordinates:[];let big=null,ba=-1;
+      polys.forEach(pg=>pg.forEach(r=>{let a=1e9,b=-1e9,c=1e9,dd=-1e9;r.forEach((p,i)=>{const[x,y]=prj(p[0],p[1]);i?P.lineTo(x,y):P.moveTo(x,y);a=Math.min(a,x);b=Math.max(b,x);c=Math.min(c,y);dd=Math.max(dd,y)});P.closePath();const ar=(b-a)*(dd-c);if(ar>ba){ba=ar;big=[(a+b)/2,(c+dd)/2]}}));
+      const nm=String((f.properties||{}).name||(f.properties||{}).nome||''),key=nm.normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase();if(big)mp.lab.push([big[0],big[1],UF[key]||nm])});mp.uf=P}
+    mp.busy=false}
+  if(!mp.st){const c=await idb.get('st');
+    if(c&&Date.now()-c.at<7*864e5)mp.st=c.list;
+    else{$('mapMsg').textContent='Carregando as rádios do Brasil…';
+      try{const j=await rb('/json/stations/search?countrycode=BR&has_geo_info=true&hidebroken=true&is_https=true&order=clickcount&reverse=true&limit=4000');
+        mp.st=j.filter(s=>isFinite(s.geo_lat)&&isFinite(s.geo_long)&&okUrl(s.url_resolved||s.url)).map(mk);idb.set('st',{at:Date.now(),list:mp.st})}
+      catch(e){$('mapMsg').textContent='Sem conexão para carregar as rádios do mapa.';mapDraw();return}}
+    mp.st.forEach(r=>{const p=prj(+r.lon,+r.lat);r.px=p[0];r.py=p[1]})}
+  $('mapMsg').textContent=mp.uf?'':'Não consegui baixar o desenho do mapa, mas as rádios aparecem.';mapDraw()}
+function mapResize(){const cv=$('mapCv'),r=cv.getBoundingClientRect();if(!r.width)return;mp.d=devicePixelRatio||1;cv.width=r.width*mp.d;cv.height=r.height*mp.d;const first=!mp.W;mp.W=r.width;mp.H=r.height;if(first)mapHome()}
+const kMin=()=>Math.min(mp.W/(BB.x1-BB.x0),mp.H/(BB.y1-BB.y0))*0.92;
+function mapHome(){mp.k=kMin();mp.x=mp.W/2-mp.k*(BB.x0+BB.x1)/2;mp.y=mp.H/2-mp.k*(BB.y0+BB.y1)/2;mapDraw()}
+function mapClamp(){mp.k=Math.max(kMin(),Math.min(kMin()*400,mp.k));const pad=40;
+  mp.x=Math.min(Math.max(mp.x,mp.W-pad-BB.x1*mp.k),pad-BB.x0*mp.k);mp.y=Math.min(Math.max(mp.y,mp.H-pad-BB.y1*mp.k),pad-BB.y0*mp.k)}
+function mapZoom(f,cx,cy){cx=cx??mp.W/2;cy=cy??mp.H/2;const wx=(cx-mp.x)/mp.k,wy=(cy-mp.y)/mp.k;mp.k*=f;mapClamp();mp.x=cx-wx*mp.k;mp.y=cy-wy*mp.k;mapClamp();mapDraw()}
+function clusters(){const G=34,cells=new Map(),out=[];if(!mp.st)return out;
+  mp.st.forEach((r,i)=>{const X=mp.x+r.px*mp.k,Y=mp.y+r.py*mp.k;if(X<-20||Y<-20||X>mp.W+20||Y>mp.H+20)return;const key=Math.floor(X/G)+'_'+Math.floor(Y/G);let c=cells.get(key);if(!c){c={x:0,y:0,m:[]};cells.set(key,c);out.push(c)}c.x+=X;c.y+=Y;c.m.push(i)});
+  out.forEach(c=>{c.x/=c.m.length;c.y/=c.m.length});return out}
+function mapDraw(){if(!mp.on)return;const cv=$('mapCv'),c=cv.getContext('2d'),d=mp.d;c.setTransform(1,0,0,1,0,0);c.clearRect(0,0,cv.width,cv.height);
+  if(mp.uf){c.setTransform(d*mp.k,0,0,d*mp.k,d*mp.x,d*mp.y);c.fillStyle='rgba(74,18,23,.9)';c.fill(mp.uf);c.lineWidth=1.1/mp.k;c.strokeStyle='rgba(255,90,105,.65)';c.stroke(mp.uf);c.setTransform(1,0,0,1,0,0);
+    c.font=`bold ${(mp.k>kMin()*3?15:12)*d}px Chakra Petch,sans-serif`;c.textAlign='center';c.textBaseline='middle';c.fillStyle='rgba(255,170,180,.38)';
+    mp.lab.forEach(([x,y,t])=>c.fillText(t,(mp.x+x*mp.k)*d,(mp.y+y*mp.k)*d))}
+  const cl=clusters();mp.cl=cl;const occ=[],free=(x,y,w,h)=>!occ.some(o=>x<o[0]+o[2]&&x+w>o[0]&&y<o[1]+o[3]&&y+h>o[1]);
+  c.textAlign='center';c.textBaseline='middle';
+  cl.forEach(k=>{const n=k.m.length;if(n===1){c.beginPath();c.arc(k.x*d,k.y*d,5*d,0,7);c.fillStyle='#ff4d5e';c.fill();occ.push([k.x-6,k.y-6,12,12])}
+    else{const r=Math.min(24,10+Math.log2(n)*3);c.beginPath();c.arc(k.x*d,k.y*d,r*d,0,7);c.fillStyle='rgba(200,16,34,.85)';c.fill();c.lineWidth=1.5*d;c.strokeStyle='rgba(255,150,160,.9)';c.stroke();
+      c.fillStyle='#fff';c.font=`bold ${12*d}px Chakra Petch,sans-serif`;c.fillText(n,k.x*d,k.y*d+d);occ.push([k.x-r,k.y-r,2*r,2*r])}});
+  c.textAlign='left';c.font=`${12*d}px Chakra Petch,sans-serif`;
+  cl.filter(k=>k.m.length===1).forEach(k=>{const r=mp.st[k.m[0]],t=r.name.slice(0,24),w=c.measureText(t).width/d+4;if(!free(k.x+9,k.y-8,w,16))return;occ.push([k.x+9,k.y-8,w,16]);
+    c.fillStyle='rgba(255,220,225,.9)';c.shadowColor='#000';c.shadowBlur=4*d;c.fillText(t,(k.x+10)*d,k.y*d);c.shadowBlur=0});
+  if(cur&&mp.st){const r=mp.st.find(s=>s.id===cur.id);if(r){const X=mp.x+r.px*mp.k,Y=mp.y+r.py*mp.k;c.beginPath();c.arc(X*d,Y*d,8*d,0,7);c.strokeStyle='#fff';c.lineWidth=2.5*d;c.stroke()}}
+  $('mapLeg').textContent=mp.st?'Toque numa bolinha · com número = várias rádios juntas · pinça para zoom':''}
+function pickC(x,y){let b=null,bd=1e9;mp.cl.forEach(k=>{const r=k.m.length>1?Math.min(24,10+Math.log2(k.m.length)*3)+6:16,dd=Math.hypot(k.x-x,k.y-y);if(dd<=r&&dd<bd){bd=dd;b=k}});return b}
+let sheetL=[];
+function tapCluster(k){const rs=k.m.map(i=>mp.st[i]);
+  if(rs.length===1)return play(rs[0]);
+  let a=1e9,b=-1e9,c=1e9,d=-1e9;rs.forEach(r=>{a=Math.min(a,r.px);b=Math.max(b,r.px);c=Math.min(c,r.py);d=Math.max(d,r.py)});
+  const span=Math.max(b-a,d-c)*mp.k;if(span>6&&mp.k<kMin()*400){mapZoom(Math.min(6,Math.max(2,70/span)),k.x,k.y);return}
+  sheetL=rs.slice().sort((x,y)=>cmp(x.name,y.name));$('shT').textContent=rs.length+' rádios '+(rs[0].city?'em '+rs[0].city:'aqui');
+  $('shL').innerHTML=sheetL.map((r,i)=>rowHTML(r,i,'m')).join('');$('sheet').classList.add('on')}
+$('shX').onclick=()=>$('sheet').classList.remove('on');
+$('mapZoom').onclick=e=>{const b=e.target.closest('[data-z]');if(!b)return;b.dataset.z==='home'?mapHome():mapZoom(b.dataset.z==='in'?2:.5)};
+(()=>{const cv=$('mapCv'),pts=new Map();let st=null,moved=false;
+  const rel=e=>{const r=cv.getBoundingClientRect();return[e.clientX-r.left,e.clientY-r.top]};
+  cv.addEventListener('pointerdown',e=>{cv.setPointerCapture(e.pointerId);pts.set(e.pointerId,rel(e));moved=false;
+    if(pts.size===1){const[x,y]=rel(e);st={x,y,mx:mp.x,my:mp.y}}
+    else if(pts.size===2){const[a,b]=[...pts.values()];st={pinch:Math.hypot(a[0]-b[0],a[1]-b[1]),k:mp.k,cx:(a[0]+b[0])/2,cy:(a[1]+b[1])/2,mx:mp.x,my:mp.y}}});
+  cv.addEventListener('pointermove',e=>{if(!pts.has(e.pointerId)||!st)return;pts.set(e.pointerId,rel(e));
+    if(pts.size===2&&st.pinch){const[a,b]=[...pts.values()],dist=Math.hypot(a[0]-b[0],a[1]-b[1]),wx=(st.cx-st.mx)/st.k,wy=(st.cy-st.my)/st.k;
+      mp.k=st.k*dist/st.pinch;mapClamp();const cx=(a[0]+b[0])/2,cy=(a[1]+b[1])/2;mp.x=cx-wx*mp.k;mp.y=cy-wy*mp.k;mapClamp();moved=true;mapDraw()}
+    else if(pts.size===1&&!st.pinch){const[x,y]=rel(e);if(Math.abs(x-st.x)+Math.abs(y-st.y)>8)moved=true;if(moved){mp.x=st.mx+x-st.x;mp.y=st.my+y-st.y;mapClamp();mapDraw()}}});
+  const up=e=>{const was=pts.has(e.pointerId);pts.delete(e.pointerId);if(!was)return;
+    if(pts.size===0){if(!moved&&st&&!st.pinch){const[x,y]=rel(e),k=pickC(x,y);if(k)tapCluster(k)}st=null}
+    else if(pts.size===1){const[p]=[...pts.values()];st={x:p[0],y:p[1],mx:mp.x,my:mp.y};moved=true}};
+  cv.addEventListener('pointerup',up);cv.addEventListener('pointercancel',up);
+  let lastTap=0;cv.addEventListener('pointerup',e=>{const now=Date.now();if(now-lastTap<300&&!moved){const[x,y]=rel(e);if(!pickC(x,y))mapZoom(2,x,y)}lastTap=now});
+  addEventListener('resize',()=>{if(mp.on){const W=mp.W;mapResize();if(W)mapClamp();mapDraw()}})})();
+
+/* ---------- inicio ---------- */
+renderAll();setState('stop');mediaMeta();
+if('serviceWorker' in navigator&&location.protocol==='https:')navigator.serviceWorker.register('sw.js').catch(()=>{});
+</script>
+</body>
+</html>
