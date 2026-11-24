@@ -57,6 +57,8 @@ h2{font-family:"Metal Mania",serif;font-weight:400;font-size:22px;letter-spacing
 .xb{flex:none;width:36px;height:36px;border:1px solid rgba(255,18,38,.35);border-radius:8px;background:rgba(10,3,5,.6);color:#ff8a96;font-size:15px}
 .hdr{display:flex;align-items:center;gap:8px;margin:6px 16px 10px}.hdr h2{margin:0;flex:1}
 .lnk{border:1px solid rgba(255,18,38,.45);background:rgba(10,3,5,.7);border-radius:8px;padding:6px 10px;font-size:12.5px;color:#ffb3bb}
+.grip{flex:none;width:34px;height:44px;display:grid;place-items:center;font-size:20px;color:#ff8a96;touch-action:none;margin-left:-4px}
+.row.drag{position:relative;z-index:5;background:rgba(60,8,16,.96);box-shadow:0 8px 24px rgba(0,0,0,.7),0 0 14px rgba(255,18,38,.6);border-radius:10px;transition:none}
 .hist{display:flex;flex-wrap:wrap;gap:7px;padding:0 12px 10px;flex:none}
 .hchip{display:flex;align-items:center;gap:2px;border:1px solid rgba(255,255,255,.14);background:rgba(10,3,5,.75);border-radius:16px;padding:0 0 0 11px;font-size:13px;max-width:100%}
 .hchip span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding:6px 0}.hchip i{font-style:normal;width:32px;height:30px;display:grid;place-items:center;color:#ff8a96}
@@ -105,7 +107,7 @@ nav button.on{color:#fff;text-shadow:0 0 10px var(--red)}nav button.on i{filter:
   <div class="scroll" id="sList"><div class="hint">Busque uma rádio ou toque num atalho acima.</div></div>
 </section>
 
-<section class="view" id="vFav"><h2>Favoritas</h2><div class="scroll" id="fList"></div></section>
+<section class="view" id="vFav"><div class="hdr"><h2>Favoritas</h2><button class="lnk" id="favSort"></button></div><div id="favTip" class="t2" style="margin:-4px 16px 8px;display:none">Segure ☰ e arraste para mudar a ordem</div><div class="scroll" id="fList"></div></section>
 <section class="view" id="vRec"><div class="hdr"><h2>Recentes</h2><button class="lnk" id="recClr">Limpar tudo</button></div><div class="scroll" id="rList"></div></section>
 
 <section class="view" id="vMap">
@@ -174,7 +176,7 @@ function mediaMeta(){if(!('mediaSession' in navigator)||!cur)return;
     artwork:[...(cur.img?[{src:cur.img,sizes:'256x256'}]:[]),{src:'icon-512.png',sizes:'512x512',type:'image/png'}]})}
 if('mediaSession' in navigator){const ms=navigator.mediaSession;
   ms.setActionHandler('play',()=>play(cur));ms.setActionHandler('pause',pause);ms.setActionHandler('stop',pause);
-  const step=d=>{const L=favs.length?favs:recs;if(!L.length)return;const i=L.findIndex(x=>cur&&x.id===cur.id);play(L[(i+d+L.length)%L.length])};
+  const step=d=>{const L=favs.length?favView():recs;if(!L.length)return;const i=L.findIndex(x=>cur&&x.id===cur.id);play(L[(i+d+L.length)%L.length])};
   ms.setActionHandler('nexttrack',()=>step(1));ms.setActionHandler('previoustrack',()=>step(-1))}
 
 /* ---------- onda sonora (pulso animado) ---------- */
@@ -193,10 +195,12 @@ function drawWave(){requestAnimationFrame(drawWave);if(!$('vNow').classList.cont
 requestAnimationFrame(drawWave);
 
 /* ---------- listas ---------- */
-const rowHTML=(r,i,l)=>`<div class="row${cur&&cur.id===r.id?' cur':''}" data-l="${l}" data-i="${i}"><span class="ic">${r.img?`<img src="${esc(r.img)}" alt="" loading="lazy" onerror="this.remove()">`:'FM'}</span>
+const rowHTML=(r,i,l)=>`<div class="row${cur&&cur.id===r.id?' cur':''}" data-l="${l}" data-i="${i}">${l==='f'&&favMode==='manual'&&favs.length>1?'<span class="grip" data-grip>☰</span>':''}<span class="ic">${r.img?`<img src="${esc(r.img)}" alt="" loading="lazy" onerror="this.remove()">`:'FM'}</span>
   <div class="tt"><div class="t1">${esc(r.name)}</div><div class="t2">${esc(sub(r))}</div></div><button class="star${isFav(r)?' on':''}" data-star>${isFav(r)?'★':'☆'}</button>${l==='r'?'<button class="xb" data-x title="Tirar dos recentes">✕</button>':''}</div>`;
-const listOf=l=>l==='s'?view:l==='f'?favs:l==='r'?recs:sheetL;
-document.addEventListener('click',e=>{const row=e.target.closest('.row[data-l]');if(!row)return;const r=listOf(row.dataset.l)[+row.dataset.i];if(!r)return;
+let favMode=ls.get('favMode','manual');
+const favView=()=>favMode==='alpha'?favs.slice().sort((a,b)=>cmp(a.name,b.name)):favs;
+const listOf=l=>l==='s'?view:l==='f'?favView():l==='r'?recs:sheetL;
+document.addEventListener('click',e=>{if(e.target.closest('[data-grip]')||Date.now()<noClickUntil)return;const row=e.target.closest('.row[data-l]');if(!row)return;const r=listOf(row.dataset.l)[+row.dataset.i];if(!r)return;
   if(e.target.closest('[data-x]')){recs=recs.filter(x=>x.id!==r.id);ls.set('recs',recs);renderAll();return}
   if(e.target.closest('[data-star]'))toggleFav(r);else{play(r);if(row.dataset.l==='m')$('sheet').classList.remove('on')}});
 function renderAll(){
@@ -205,11 +209,29 @@ function renderAll(){
   $('nowT').textContent=cur?cur.name:'Escolha uma rádio';$('nowA').textContent=cur?sub(cur):'Busque, abra as favoritas ou o mapa';
   $('logoBox').classList.toggle('has',!!(cur&&cur.img));$('nowImg').src=cur&&cur.img||'';
   if(view.length)$('sList').innerHTML=`<div class="sec"><span style="flex:1">${esc(viewHead)} · ${view.length}</span><button class="lnk" id="resClr">✕ Limpar</button></div>`+view.map((r,i)=>rowHTML(r,i,'s')).join('');
-  $('fList').innerHTML=favs.length?favs.map((r,i)=>rowHTML(r,i,'f')).join(''):'<div class="hint">Toque na ☆ de uma rádio para guardar aqui.</div>';
+  $('favSort').textContent=favMode==='alpha'?'Ordem: A–Z':'Ordem: manual';$('favSort').style.display=favs.length>1?'':'none';$('favTip').style.display=favMode==='manual'&&favs.length>1?'':'none';
+  $('fList').innerHTML=favs.length?favView().map((r,i)=>rowHTML(r,i,'f')).join(''):'<div class="hint">Toque na ☆ de uma rádio para guardar aqui.</div>';
   $('recClr').style.display=recs.length?'':'none';
   $('rList').innerHTML=recs.length?recs.map((r,i)=>rowHTML(r,i,'r')).join(''):'<div class="hint">As rádios que você ouvir aparecem aqui.</div>';
   if(mp.on)mapDraw()}
 $('nowImg').onerror=()=>$('logoBox').classList.remove('has');
+
+/* ---------- favoritas: ordem A-Z ou manual (segurar ☰ e arrastar) ---------- */
+let noClickUntil=0;
+$('favSort').onclick=()=>{favMode=favMode==='alpha'?'manual':'alpha';ls.set('favMode',favMode);renderAll();toast(favMode==='alpha'?'Favoritas em ordem alfabética':'Ordem manual: segure ☰ e arraste')};
+(()=>{const L=$('fList');let dr=null;
+  L.addEventListener('pointerdown',e=>{const g=e.target.closest('[data-grip]');if(!g)return;e.preventDefault();const row=g.closest('.row');
+    g.setPointerCapture(e.pointerId);dr={row,g,y0:e.clientY,off:0,id:e.pointerId,last:e.clientY};row.classList.add('drag');if(navigator.vibrate)navigator.vibrate(15)});
+  const move=e=>{if(!dr||e.pointerId!==dr.id)return;dr.last=e.clientY;const row=dr.row;let dy=e.clientY-dr.y0;
+    const prev=row.previousElementSibling,next=row.nextElementSibling;
+    if(next&&dy>next.offsetHeight/2){L.insertBefore(next,row);dr.y0+=next.offsetHeight;dy=e.clientY-dr.y0}
+    else if(prev&&dy<-prev.offsetHeight/2){L.insertBefore(row,prev);dr.y0-=prev.offsetHeight;dy=e.clientY-dr.y0}
+    row.style.transform=`translateY(${dy}px)`;
+    const r=L.getBoundingClientRect();if(e.clientY<r.top+40)L.scrollTop-=8;else if(e.clientY>r.bottom-40)L.scrollTop+=8};
+  L.addEventListener('pointermove',move);
+  const end=e=>{if(!dr||e.pointerId!==dr.id)return;const ids=[...L.querySelectorAll('.row')].map(x=>favs[+x.dataset.i]&&favs[+x.dataset.i].id);
+    favs=ids.map(id=>favs.find(f=>f.id===id)).filter(Boolean);ls.set('favs',favs);dr.row.style.transform='';dr.row.classList.remove('drag');dr=null;noClickUntil=Date.now()+300;renderAll()};
+  L.addEventListener('pointerup',end);L.addEventListener('pointercancel',end)})();
 
 /* ---------- busca ---------- */
 const CHIPS=[['🇧🇷 Mais ouvidas','top'],['Rock','tag:rock'],['Metal','tag:metal'],['Heavy Metal','tag:heavy metal'],['Hard Rock','tag:hard rock'],['Classic Rock','tag:classic rock'],['Kiss FM','kiss fm'],['🌎 Mundo','world']];
