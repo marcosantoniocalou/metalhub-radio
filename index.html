@@ -54,7 +54,13 @@ h2{font-family:"Metal Mania",serif;font-weight:400;font-size:22px;letter-spacing
 .tt{flex:1;min-width:0}.t1{font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .t2{font-size:12px;color:var(--dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:2px}
 .star{flex:none;width:40px;height:40px;border:0;background:none;font-size:22px;color:#666}.star.on{color:#ffcf3d;text-shadow:0 0 10px rgba(255,200,60,.7)}
-.sec{font-size:12px;letter-spacing:2px;color:var(--red2);font-weight:700;text-transform:uppercase;margin:6px 4px 8px}
+.xb{flex:none;width:36px;height:36px;border:1px solid rgba(255,18,38,.35);border-radius:8px;background:rgba(10,3,5,.6);color:#ff8a96;font-size:15px}
+.hdr{display:flex;align-items:center;gap:8px;margin:6px 16px 10px}.hdr h2{margin:0;flex:1}
+.lnk{border:1px solid rgba(255,18,38,.45);background:rgba(10,3,5,.7);border-radius:8px;padding:6px 10px;font-size:12.5px;color:#ffb3bb}
+.hist{display:flex;flex-wrap:wrap;gap:7px;padding:0 12px 10px;flex:none}
+.hchip{display:flex;align-items:center;gap:2px;border:1px solid rgba(255,255,255,.14);background:rgba(10,3,5,.75);border-radius:16px;padding:0 0 0 11px;font-size:13px;max-width:100%}
+.hchip span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding:6px 0}.hchip i{font-style:normal;width:32px;height:30px;display:grid;place-items:center;color:#ff8a96}
+.sec{display:flex;align-items:center;gap:8px;font-size:12px;letter-spacing:2px;color:var(--red2);font-weight:700;text-transform:uppercase;margin:6px 4px 8px}
 /* mapa */
 #vMap{padding:0 10px}
 #mapBox{position:relative;flex:1;border-radius:12px;overflow:hidden;border:1px solid rgba(255,18,38,.5);box-shadow:var(--glowR);background:radial-gradient(ellipse at 50% 40%,rgba(20,5,7,.92),rgba(5,2,3,.96) 75%);touch-action:none}
@@ -95,11 +101,12 @@ nav button.on{color:#fff;text-shadow:0 0 10px var(--red)}nav button.on i{filter:
 <section class="view" id="vSearch">
   <div class="sbox"><input class="field" id="q" type="search" enterkeyhint="search" placeholder="Nome, cidade ou estilo"><button class="btn" id="qGo">🔍</button></div>
   <div class="chips" id="chips"></div>
+  <div class="hist" id="hist"></div>
   <div class="scroll" id="sList"><div class="hint">Busque uma rádio ou toque num atalho acima.</div></div>
 </section>
 
 <section class="view" id="vFav"><h2>Favoritas</h2><div class="scroll" id="fList"></div></section>
-<section class="view" id="vRec"><h2>Recentes</h2><div class="scroll" id="rList"></div></section>
+<section class="view" id="vRec"><div class="hdr"><h2>Recentes</h2><button class="lnk" id="recClr">Limpar tudo</button></div><div class="scroll" id="rList"></div></section>
 
 <section class="view" id="vMap">
   <div id="mapBox"><canvas id="mapCv"></canvas><div id="mapMsg"></div>
@@ -187,26 +194,36 @@ requestAnimationFrame(drawWave);
 
 /* ---------- listas ---------- */
 const rowHTML=(r,i,l)=>`<div class="row${cur&&cur.id===r.id?' cur':''}" data-l="${l}" data-i="${i}"><span class="ic">${r.img?`<img src="${esc(r.img)}" alt="" loading="lazy" onerror="this.remove()">`:'FM'}</span>
-  <div class="tt"><div class="t1">${esc(r.name)}</div><div class="t2">${esc(sub(r))}</div></div><button class="star${isFav(r)?' on':''}" data-star>${isFav(r)?'★':'☆'}</button></div>`;
+  <div class="tt"><div class="t1">${esc(r.name)}</div><div class="t2">${esc(sub(r))}</div></div><button class="star${isFav(r)?' on':''}" data-star>${isFav(r)?'★':'☆'}</button>${l==='r'?'<button class="xb" data-x title="Tirar dos recentes">✕</button>':''}</div>`;
 const listOf=l=>l==='s'?view:l==='f'?favs:l==='r'?recs:sheetL;
 document.addEventListener('click',e=>{const row=e.target.closest('.row[data-l]');if(!row)return;const r=listOf(row.dataset.l)[+row.dataset.i];if(!r)return;
+  if(e.target.closest('[data-x]')){recs=recs.filter(x=>x.id!==r.id);ls.set('recs',recs);renderAll();return}
   if(e.target.closest('[data-star]'))toggleFav(r);else{play(r);if(row.dataset.l==='m')$('sheet').classList.remove('on')}});
 function renderAll(){
   $('miniT').textContent=cur?cur.name:'Nada tocando';$('miniA').textContent=cur?sub(cur)||'Rádio ao vivo':'Metal Hub Rádio';
   $('miniStar').textContent=isFav(cur)?'★':'☆';$('miniStar').classList.toggle('on',isFav(cur));
   $('nowT').textContent=cur?cur.name:'Escolha uma rádio';$('nowA').textContent=cur?sub(cur):'Busque, abra as favoritas ou o mapa';
   $('logoBox').classList.toggle('has',!!(cur&&cur.img));$('nowImg').src=cur&&cur.img||'';
-  if(view.length)$('sList').innerHTML=`<div class="sec">${esc(viewHead)} · ${view.length}</div>`+view.map((r,i)=>rowHTML(r,i,'s')).join('');
+  if(view.length)$('sList').innerHTML=`<div class="sec"><span style="flex:1">${esc(viewHead)} · ${view.length}</span><button class="lnk" id="resClr">✕ Limpar</button></div>`+view.map((r,i)=>rowHTML(r,i,'s')).join('');
   $('fList').innerHTML=favs.length?favs.map((r,i)=>rowHTML(r,i,'f')).join(''):'<div class="hint">Toque na ☆ de uma rádio para guardar aqui.</div>';
+  $('recClr').style.display=recs.length?'':'none';
   $('rList').innerHTML=recs.length?recs.map((r,i)=>rowHTML(r,i,'r')).join(''):'<div class="hint">As rádios que você ouvir aparecem aqui.</div>';
   if(mp.on)mapDraw()}
 $('nowImg').onerror=()=>$('logoBox').classList.remove('has');
 
 /* ---------- busca ---------- */
 const CHIPS=[['🇧🇷 Mais ouvidas','top'],['Rock','tag:rock'],['Metal','tag:metal'],['Heavy Metal','tag:heavy metal'],['Hard Rock','tag:hard rock'],['Classic Rock','tag:classic rock'],['Kiss FM','kiss fm'],['🌎 Mundo','world']];
-let viewHead='',brOnly=ls.get('br',true);
+let viewHead='',brOnly=ls.get('br',true),hist=ls.get('hist',[]);
+function renderHist(){$('hist').innerHTML=hist.map((q,i)=>`<span class="hchip"><span data-hq="${i}">🕘 ${esc(q)}</span><i data-hx="${i}" title="Apagar">✕</i></span>`).join('')+(hist.length>1?`<span class="hchip" style="padding:0"><i data-hall style="width:auto;padding:0 10px">Apagar buscas</i></span>`:'')}
+$('hist').onclick=e=>{const x=e.target.closest('[data-hx]');if(x){hist.splice(+x.dataset.hx,1);ls.set('hist',hist);renderHist();return}
+  if(e.target.closest('[data-hall]')){hist=[];ls.set('hist',hist);renderHist();return}
+  const q=e.target.closest('[data-hq]');if(q){$('q').value=hist[+q.dataset.hq];search(hist[+q.dataset.hq])}};
+function histAdd(q){hist=[q,...hist.filter(x=>x.toLowerCase()!==q.toLowerCase())].slice(0,10);ls.set('hist',hist);renderHist()}
+function clearResults(){view=[];viewHead='';$('q').value='';renderChips();$('sList').innerHTML='<div class="hint">Busque uma rádio ou toque num atalho acima.</div>'}
+$('sList').addEventListener('click',e=>{if(e.target.closest('#resClr'))clearResults()});
+$('recClr').onclick=()=>{if(confirm('Apagar todas as rádios recentes?')){recs=[];ls.set('recs',recs);renderAll()}};
 function renderChips(on){$('chips').innerHTML=`<button class="chip${brOnly?' on':''}" data-br>🇧🇷 Só Brasil</button>`+CHIPS.map(c=>`<button class="chip${on===c[1]?' on':''}" data-c="${esc(c[1])}" data-l="${esc(c[0])}">${esc(c[0])}</button>`).join('')}
-async function search(q,label){q=String(q||'').trim();if(!q)return;renderChips(q);viewHead=label||'“'+q+'”';$('sList').innerHTML='<div class="hint">Buscando…</div>';$('q').blur();
+async function search(q,label){q=String(q||'').trim();if(!q)return;if(!label)histAdd(q);renderChips(q);viewHead=label||'“'+q+'”';$('sList').innerHTML='<div class="hint">Buscando…</div>';$('q').blur();
   const base='&hidebroken=true&is_https=true&order=clickcount&reverse=true&limit=80'+(brOnly&&q!=='world'?'&countrycode=BR':'');
   try{let j;
     if(q==='top')j=await rb('/json/stations/search?countrycode=BR&hidebroken=true&is_https=true&order=clickcount&reverse=true&limit=80');
@@ -221,7 +238,7 @@ async function search(q,label){q=String(q||'').trim();if(!q)return;renderChips(q
 $('chips').onclick=e=>{if(e.target.closest('[data-br]')){brOnly=!brOnly;ls.set('br',brOnly);renderChips();const v=$('q').value.trim();if(v)search(v);return}
   const c=e.target.closest('[data-c]');if(c){$('q').value='';search(c.dataset.c,c.dataset.l)}};
 $('q').addEventListener('keydown',e=>{if(e.key==='Enter')search(e.target.value)});$('qGo').onclick=()=>search($('q').value);
-renderChips();
+renderChips();renderHist();
 
 /* ---------- navegacao ---------- */
 function showView(v){document.querySelectorAll('.view').forEach(x=>x.classList.toggle('on',x.id===v));document.querySelectorAll('nav button').forEach(b=>b.classList.toggle('on',b.dataset.v===v));
