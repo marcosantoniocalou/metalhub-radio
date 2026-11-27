@@ -85,19 +85,40 @@ nav{position:fixed;left:0;right:0;bottom:0;height:calc(var(--nav) + var(--sb));p
 nav button{flex:1;border:0;background:none;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;font-size:11px;color:var(--dim);letter-spacing:.5px}
 nav button i{font-style:normal;font-size:20px;filter:grayscale(1) brightness(1.4)}
 nav button.on{color:#fff;text-shadow:0 0 10px var(--red)}nav button.on i{filter:none}
+.hbtn{width:40px;height:40px;border-radius:10px;border:1px solid rgba(255,18,38,.45);background:rgba(10,3,5,.7);font-size:19px}
+#cfg{position:fixed;inset:0;background:rgba(0,0,0,.7);display:none;place-items:center;z-index:20;padding:16px}#cfg.on{display:grid}
+#cfg .card{width:100%;max-width:440px;background:#12060a;border:1px solid var(--red);border-radius:14px;padding:16px;box-shadow:var(--glowR)}
+#cfg .field{width:100%;margin:6px 0 0;font-size:14px}
+#nowSong{margin-top:12px;font-size:16px;font-weight:600;color:#ffd1d6;text-shadow:0 0 10px rgba(255,18,38,.6),0 2px 8px #000;min-height:22px;transition:opacity .8s}
+#nowSong:empty{display:none}
+#idBtn{margin-top:10px;padding:10px 18px;border-radius:22px;border:1px solid var(--red);background:rgba(40,6,12,.85);box-shadow:0 0 14px -3px var(--red);font-weight:600;display:none}
+#idBtn.on{display:inline-block}#idBtn:disabled{opacity:.6}
+#idRes{margin-top:12px;max-width:100%;display:none;background:rgba(12,4,7,.92);border:1px solid rgba(255,18,38,.6);border-radius:12px;padding:10px 14px;text-align:left;box-shadow:0 0 16px rgba(255,18,38,.3)}
+#idRes.on{display:block}#idRes b{display:block;font-size:16px}#idRes a{color:#1ed760;font-weight:600;text-decoration:none}
+.idrow{display:flex;align-items:center;gap:10px;padding:9px 8px;border-bottom:1px solid var(--line);background:rgba(8,3,5,.55)}
+.idrow .ic{color:#ffcf3d;font-size:20px}.idrow a{color:#1ed760;font-size:12.5px;text-decoration:none;flex:none}
 #toast{position:fixed;left:50%;bottom:calc(var(--nav) + var(--sb) + 84px);transform:translateX(-50%);background:#12080b;border:1px solid var(--red);padding:9px 16px;border-radius:10px;box-shadow:var(--glowR);opacity:0;pointer-events:none;transition:.25s;z-index:9;width:max-content;max-width:88vw;text-align:center;font-size:14px}
 #toast.on{opacity:1}
 </style>
 </head>
 <body>
-<header><div class="logo">Metal Hub<small>RÁDIO</small></div></header>
+<header><div class="logo">Metal Hub<small>RÁDIO</small></div><span style="flex:1"></span><button class="hbtn" id="cfgBtn" aria-label="Configurar">⚙</button></header>
+<div id="cfg"><div class="card"><b>Ajudante do Metal Hub</b>
+  <p class="t2" style="white-space:normal;line-height:1.5">Cole o endereço do seu ajudante no Cloudflare (termina em <i>.workers.dev</i>). Ele mostra o nome da música e libera o botão 🎵.</p>
+  <input class="field" id="cfgUrl" placeholder="https://metalhub-radio.SEUNOME.workers.dev" inputmode="url" autocomplete="off">
+  <div id="cfgSt" class="t2" style="margin:8px 2px;white-space:normal"></div>
+  <div style="display:flex;gap:8px;justify-content:flex-end"><button class="lnk" id="cfgTest">Testar</button><button class="lnk" id="cfgX">Fechar</button><button class="btn" id="cfgOk" style="padding:8px 14px">Salvar</button></div>
+</div></div>
 
 <section class="view on" id="vNow">
   <div id="logoBox"><img id="nowImg" alt=""><span>MH</span></div>
   <div id="nowT">Escolha uma rádio</div>
   <div id="nowA">Busque, abra as favoritas ou o mapa</div>
+  <div id="nowSong"></div>
   <canvas id="wave"></canvas>
   <div id="nowState"></div>
+  <button id="idBtn">🎵 Que música é essa?</button>
+  <div id="idRes"></div>
 </section>
 
 <section class="view" id="vSearch">
@@ -108,7 +129,7 @@ nav button.on{color:#fff;text-shadow:0 0 10px var(--red)}nav button.on i{filter:
 </section>
 
 <section class="view" id="vFav"><div class="hdr"><h2>Favoritas</h2><button class="lnk" id="favSort"></button></div><div id="favTip" class="t2" style="margin:-4px 16px 8px;display:none">Segure ☰ e arraste para mudar a ordem</div><div class="scroll" id="fList"></div></section>
-<section class="view" id="vRec"><div class="hdr"><h2>Recentes</h2><button class="lnk" id="recClr">Limpar tudo</button></div><div class="scroll" id="rList"></div></section>
+<section class="view" id="vRec"><div class="hdr"><h2>Recentes</h2><button class="lnk" id="recClr">Limpar tudo</button></div><div class="scroll"><div id="idList"></div><div id="rList"></div></div></section>
 
 <section class="view" id="vMap">
   <div id="mapBox"><canvas id="mapCv"></canvas><div id="mapMsg"></div>
@@ -159,20 +180,21 @@ function toggleFav(r){if(!r)return;if(isFav(r)){favs=favs.filter(f=>f.id!==r.id)
 const aud=$('aud');let tok=0;
 async function play(r){if(!r)return;cur=r;ls.set('last',r);const my=++tok;
   recs=[r,...recs.filter(x=>x.id!==r.id)].slice(0,30);ls.set('recs',recs);
-  aud.src=r.url;setState('load');renderAll();mediaMeta();
+  aud.src=r.url;song='';songFor=null;$('nowSong').textContent='';$('idRes').classList.remove('on');setState('load');renderAll();mediaMeta();
   rb('/json/url/'+encodeURIComponent(r.id)).catch(()=>{});
   try{await aud.play();if(my===tok)setState('play')}
   catch(e){if(my!==tok||e.name==='AbortError')return;setState('stop');toast('Esta rádio não respondeu. Tente outra.')}}
 function pause(){aud.pause();aud.removeAttribute('src');aud.load();setState('stop')}   // ao voltar, retoma ao vivo
 function toggle(){if(!cur)return showView('vSearch');playing||$('play').classList.contains('load')?pause():play(cur)}
 function setState(s){playing=s==='play';$('play').classList.toggle('load',s==='load');$('play').textContent=s==='stop'?'▶':'❚❚';
+  idBtnUpd();if(s==='play'&&helper&&!icyT)icyPoll();if(s==='stop'){clearTimeout(icyT);icyT=0}
   $('nowState').textContent=s==='load'?'CONECTANDO…':s==='play'?'● AO VIVO':'';if('mediaSession' in navigator)navigator.mediaSession.playbackState=s==='stop'?'paused':'playing'}
 aud.addEventListener('playing',()=>setState('play'));aud.addEventListener('waiting',()=>playing&&setState('load'));
 aud.addEventListener('error',()=>{if(aud.getAttribute('src')&&cur){setState('stop');toast('A rádio caiu ou está fora do ar.')}});
 $('play').onclick=toggle;$('miniStar').onclick=()=>toggleFav(cur);$('miniTT').onclick=()=>showView('vNow');
 /* tela bloqueada / notificacao */
 function mediaMeta(){if(!('mediaSession' in navigator)||!cur)return;
-  navigator.mediaSession.metadata=new MediaMetadata({title:cur.name,artist:sub(cur)||'Rádio ao vivo',album:'Metal Hub Rádio',
+  navigator.mediaSession.metadata=new MediaMetadata({title:song||cur.name,artist:song?cur.name:sub(cur)||'Rádio ao vivo',album:'Metal Hub Rádio',
     artwork:[...(cur.img?[{src:cur.img,sizes:'256x256'}]:[]),{src:'icon-512.png',sizes:'512x512',type:'image/png'}]})}
 if('mediaSession' in navigator){const ms=navigator.mediaSession;
   ms.setActionHandler('play',()=>play(cur));ms.setActionHandler('pause',pause);ms.setActionHandler('stop',pause);
@@ -181,17 +203,26 @@ if('mediaSession' in navigator){const ms=navigator.mediaSession;
 
 /* ---------- onda sonora (pulso animado) ---------- */
 const wv=$('wave'),wx=wv.getContext('2d');
-function drawWave(){requestAnimationFrame(drawWave);if(!$('vNow').classList.contains('on'))return;
-  const d=devicePixelRatio||1,w=wv.clientWidth*d,h=wv.clientHeight*d;if(wv.width!==w||wv.height!==h){wv.width=w;wv.height=h}
-  wx.clearRect(0,0,w,h);const T=performance.now()/1000,mid=h/2,N=64,on=playing?1:0.08,beat=Math.pow(Math.max(0,Math.sin(T*Math.PI*2.1)),8);
-  const amp=i=>{const f=i/N;return on*(0.55-f*0.35)*(0.65+0.35*Math.sin(T*3.1+i*0.9)*Math.sin(T*1.7+i*0.37))+on*beat*0.35*(1-f)};
-  const g=wx.createLinearGradient(0,0,w,0);g.addColorStop(0,'rgba(255,18,38,.15)');g.addColorStop(.5,'#ff1226');g.addColorStop(1,'rgba(255,18,38,.15)');
-  wx.shadowColor='#ff1226';wx.shadowBlur=14*d;wx.fillStyle=g;wx.beginPath();wx.moveTo(0,mid);
-  for(let i=0;i<=N;i++){const x=w/2+(i/N)*w/2;wx.lineTo(x,mid-amp(i)*mid*.92)}
-  for(let i=N;i>=0;i--){const x=w/2+(i/N)*w/2;wx.lineTo(x,mid+amp(i)*mid*.92)}wx.closePath();wx.fill();
-  wx.beginPath();wx.moveTo(w/2,mid);
-  for(let i=0;i<=N;i++){const x=w/2-(i/N)*w/2;wx.lineTo(x,mid-amp(i)*mid*.92)}
-  for(let i=N;i>=0;i--){const x=w/2-(i/N)*w/2;wx.lineTo(x,mid+amp(i)*mid*.92)}wx.closePath();wx.fill();wx.shadowBlur=0}
+/* onda no estilo do Metal Hub do PC: barras finas espelhadas a partir do centro, com brilho.
+   Simulada (o celular nao deixa ler o som da radio sem cortar o audio com a tela apagada), mas suavizada para oscilar de forma fluida. */
+const NB=56,lvl=new Float32Array(NB),tgt=new Float32Array(NB);let nextT=0,beatT=0,beatV=0,lastF=0;
+function drawWave(now){requestAnimationFrame(drawWave);if(!$('vNow').classList.contains('on'))return;
+  const d=devicePixelRatio||1,w=wv.clientWidth*d,h=wv.clientHeight*d;if(!w||!h)return;if(wv.width!==w||wv.height!==h){wv.width=w;wv.height=h}
+  const dt=Math.min(.05,(now-lastF)/1000||.016);lastF=now;const T=now/1000;
+  if(playing){
+    if(now>beatT){beatT=now+380+Math.random()*260;beatV=.55+Math.random()*.45}   // batida em tempo irregular, como musica de verdade
+    beatV*=Math.pow(.02,dt);
+    if(now>nextT){nextT=now+70+Math.random()*60;
+      for(let i=0;i<NB;i++){const f=i/NB,env=Math.pow(1-f,1.3)*.85+.12;
+        tgt[i]=Math.min(1,env*(.35+.65*Math.random()*(.6+.4*Math.sin(T*1.3+i*.45)))+beatV*(1-f)*.55)}}}
+  else for(let i=0;i<NB;i++)tgt[i]=0;
+  for(let i=0;i<NB;i++){const k=tgt[i]>lvl[i]?.35:.12;lvl[i]+=(tgt[i]-lvl[i])*k}   // sobe rapido, desce devagar (fluido)
+  wx.clearRect(0,0,w,h);const mid=h/2,bw=w/(NB*2);
+  wx.lineCap='round';wx.lineWidth=Math.max(2*d,bw*.5);wx.shadowColor='#ff1226';wx.shadowBlur=14*d;
+  for(let i=0;i<NB;i++){const s=(lvl[i]+(i>0?lvl[i-1]:lvl[i])+(i<NB-1?lvl[i+1]:lvl[i]))/3,v=s,bh=Math.max(1.5*d,v*v*mid*.95);
+    wx.strokeStyle=v>.8?'rgba(255,225,225,.95)':'rgba(255,18,38,'+(.35+v*.65)+')';
+    for(const x of [w/2+i*bw+bw/2,w/2-i*bw-bw/2]){wx.beginPath();wx.moveTo(x,mid-bh);wx.lineTo(x,mid+bh);wx.stroke()}}
+  wx.shadowBlur=6*d;wx.strokeStyle='rgba(255,18,38,.7)';wx.lineWidth=1.5*d;wx.beginPath();wx.moveTo(0,mid);wx.lineTo(w,mid);wx.stroke();wx.shadowBlur=0}
 requestAnimationFrame(drawWave);
 
 /* ---------- listas ---------- */
@@ -204,7 +235,7 @@ document.addEventListener('click',e=>{if(e.target.closest('[data-grip]')||Date.n
   if(e.target.closest('[data-x]')){recs=recs.filter(x=>x.id!==r.id);ls.set('recs',recs);renderAll();return}
   if(e.target.closest('[data-star]'))toggleFav(r);else{play(r);if(row.dataset.l==='m')$('sheet').classList.remove('on')}});
 function renderAll(){
-  $('miniT').textContent=cur?cur.name:'Nada tocando';$('miniA').textContent=cur?sub(cur)||'Rádio ao vivo':'Metal Hub Rádio';
+  $('miniT').textContent=cur?cur.name:'Nada tocando';$('miniA').textContent=cur?(song?'♪ '+song:sub(cur)||'Rádio ao vivo'):'Metal Hub Rádio';
   $('miniStar').textContent=isFav(cur)?'★':'☆';$('miniStar').classList.toggle('on',isFav(cur));
   $('nowT').textContent=cur?cur.name:'Escolha uma rádio';$('nowA').textContent=cur?sub(cur):'Busque, abra as favoritas ou o mapa';
   $('logoBox').classList.toggle('has',!!(cur&&cur.img));$('nowImg').src=cur&&cur.img||'';
@@ -212,6 +243,7 @@ function renderAll(){
   $('favSort').textContent=favMode==='alpha'?'Ordem: A–Z':'Ordem: manual';$('favSort').style.display=favs.length>1?'':'none';$('favTip').style.display=favMode==='manual'&&favs.length>1?'':'none';
   $('fList').innerHTML=favs.length?favView().map((r,i)=>rowHTML(r,i,'f')).join(''):'<div class="hint">Toque na ☆ de uma rádio para guardar aqui.</div>';
   $('recClr').style.display=recs.length?'':'none';
+  $('idList').innerHTML=idHist.length?'<div class="sec">🎵 Músicas identificadas</div>'+idHist.map((x,i)=>`<div class="idrow"><span class="ic">♪</span><div class="tt"><div class="t1">${esc(x.a)} – ${esc(x.t)}</div><div class="t2">${esc(x.radio)} · ${new Date(x.quando).toLocaleString('pt-BR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'})}</div></div>${x.sp?`<a href="${esc(x.sp)}" target="_blank" rel="noopener">Spotify</a>`:''}<button class="xb" data-idx="${i}">✕</button></div>`).join('')+'<div class="sec" style="margin-top:14px">📻 Rádios</div>':'';
   $('rList').innerHTML=recs.length?recs.map((r,i)=>rowHTML(r,i,'r')).join(''):'<div class="hint">As rádios que você ouvir aparecem aqui.</div>';
   if(mp.on)mapDraw()}
 $('nowImg').onerror=()=>$('logoBox').classList.remove('has');
@@ -232,6 +264,35 @@ $('favSort').onclick=()=>{favMode=favMode==='alpha'?'manual':'alpha';ls.set('fav
   const end=e=>{if(!dr||e.pointerId!==dr.id)return;const ids=[...L.querySelectorAll('.row')].map(x=>favs[+x.dataset.i]&&favs[+x.dataset.i].id);
     favs=ids.map(id=>favs.find(f=>f.id===id)).filter(Boolean);ls.set('favs',favs);dr.row.style.transform='';dr.row.classList.remove('drag');dr=null;noClickUntil=Date.now()+300;renderAll()};
   L.addEventListener('pointerup',end);L.addEventListener('pointercancel',end)})();
+
+/* ---------- ajudante: nome da musica (ICY) e reconhecimento pelo som ---------- */
+let helper=ls.get('helper',''),song='',songFor=null,icyT=0,idHist=ls.get('idHist',[]);
+const hUrl=p=>helper.replace(/\/+$/,'')+p;
+function songSet(v){song=v||'';$('nowSong').textContent=song?'♪ '+song:'';renderAll();mediaMeta()}
+async function icyPoll(){clearTimeout(icyT);const r=cur;if(!helper||!r||!playing)return;
+  try{const j=await (await fetch(hUrl('/icy?u='+encodeURIComponent(r.url)),{cache:'no-store'})).json();if(cur!==r)return;
+    const v=String(j.t||'').trim(),ok=v&&!/^[-\s]*$/.test(v)&&!/^(unknown|n\/a|null)$/i.test(v)&&v.toLowerCase()!==r.name.toLowerCase();
+    songFor=r.id;if((ok?v:'')!==song)songSet(ok?v:'')}catch(e){}
+  if(cur===r&&playing)icyT=setTimeout(icyPoll,20000);else icyT=0}
+function idBtnUpd(){$('idBtn').classList.toggle('on',!!helper&&!!cur&&playing)}
+$('idBtn').onclick=async()=>{const r=cur;if(!r||!helper)return;const b=$('idBtn');b.disabled=true;b.textContent='🎧 Ouvindo a rádio…';
+  const box=$('idRes');box.classList.remove('on');
+  try{const res=await fetch(hUrl('/id'),{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({u:r.url})});const j=await res.json();
+    if(j.erro)throw new Error(j.erro);
+    if(!j.achou){box.innerHTML='<b>Não reconheci</b><span class="t2">Pode ser locução, vinheta ou música fora da base. Tente de novo daqui a pouco.</span>'}
+    else{const it={t:j.titulo,a:j.artista,al:j.album,ano:j.ano,sp:j.spotify,radio:r.name,quando:Date.now()};
+      idHist=[it,...idHist.filter(x=>!(x.t===it.t&&x.a===it.a))].slice(0,50);ls.set('idHist',idHist);
+      box.innerHTML=`<b>${esc(j.artista)} – ${esc(j.titulo)}</b><span class="t2">${esc([j.album,j.ano].filter(Boolean).join(' · '))}</span>${j.spotify?`<div style="margin-top:6px"><a href="${esc(j.spotify)}" target="_blank" rel="noopener">▶ Abrir no Spotify</a></div>`:''}`;renderAll()}
+    box.classList.add('on')}
+  catch(e){toast('Não deu para reconhecer: '+e.message)}
+  b.disabled=false;b.textContent='🎵 Que música é essa?'};
+document.addEventListener('click',e=>{const x=e.target.closest('[data-idx]');if(!x)return;idHist.splice(+x.dataset.idx,1);ls.set('idHist',idHist);renderAll()});
+$('cfgBtn').onclick=()=>{$('cfgUrl').value=helper;$('cfgSt').textContent='';$('cfg').classList.add('on')};
+$('cfgX').onclick=()=>$('cfg').classList.remove('on');
+$('cfgOk').onclick=()=>{helper=$('cfgUrl').value.trim();ls.set('helper',helper);$('cfg').classList.remove('on');idBtnUpd();icyPoll();toast(helper?'Ajudante salvo':'Ajudante removido')};
+$('cfgTest').onclick=async()=>{const u=$('cfgUrl').value.trim().replace(/\/+$/,'');$('cfgSt').textContent='Testando…';
+  try{const j=await (await fetch(u+'/',{cache:'no-store'})).json();$('cfgSt').textContent=j.ok?'✅ Ajudante respondendo!':'Respondeu, mas não parece o ajudante: '+JSON.stringify(j).slice(0,80)}
+  catch(e){$('cfgSt').textContent='❌ Não respondeu ('+e.message+'). Confira o endereço.'}};
 
 /* ---------- busca ---------- */
 const CHIPS=[['🇧🇷 Mais ouvidas','top'],['Rock','tag:rock'],['Metal','tag:metal'],['Heavy Metal','tag:heavy metal'],['Hard Rock','tag:hard rock'],['Classic Rock','tag:classic rock'],['Kiss FM','kiss fm'],['🌎 Mundo','world']];
