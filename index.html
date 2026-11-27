@@ -91,12 +91,7 @@ nav button.on{color:#fff;text-shadow:0 0 10px var(--red)}nav button.on i{filter:
 #cfg .field{width:100%;margin:6px 0 0;font-size:14px}
 #nowSong{margin-top:12px;font-size:16px;font-weight:600;color:#ffd1d6;text-shadow:0 0 10px rgba(255,18,38,.6),0 2px 8px #000;min-height:22px;transition:opacity .8s}
 #nowSong:empty{display:none}
-#idBtn{margin-top:10px;padding:10px 18px;border-radius:22px;border:1px solid var(--red);background:rgba(40,6,12,.85);box-shadow:0 0 14px -3px var(--red);font-weight:600;display:none}
-#idBtn.on{display:inline-block}#idBtn:disabled{opacity:.6}
-#idRes{margin-top:12px;max-width:100%;display:none;background:rgba(12,4,7,.92);border:1px solid rgba(255,18,38,.6);border-radius:12px;padding:10px 14px;text-align:left;box-shadow:0 0 16px rgba(255,18,38,.3)}
-#idRes.on{display:block}#idRes b{display:block;font-size:16px}#idRes a{color:#1ed760;font-weight:600;text-decoration:none}
-.idrow{display:flex;align-items:center;gap:10px;padding:9px 8px;border-bottom:1px solid var(--line);background:rgba(8,3,5,.55)}
-.idrow .ic{color:#ffcf3d;font-size:20px}.idrow a{color:#1ed760;font-size:12.5px;text-decoration:none;flex:none}
+
 #toast{position:fixed;left:50%;bottom:calc(var(--nav) + var(--sb) + 84px);transform:translateX(-50%);background:#12080b;border:1px solid var(--red);padding:9px 16px;border-radius:10px;box-shadow:var(--glowR);opacity:0;pointer-events:none;transition:.25s;z-index:9;width:max-content;max-width:88vw;text-align:center;font-size:14px}
 #toast.on{opacity:1}
 </style>
@@ -104,7 +99,7 @@ nav button.on{color:#fff;text-shadow:0 0 10px var(--red)}nav button.on i{filter:
 <body>
 <header><div class="logo">Metal Hub<small>RÁDIO</small></div><span style="flex:1"></span><button class="hbtn" id="cfgBtn" aria-label="Configurar">⚙</button></header>
 <div id="cfg"><div class="card"><b>Ajudante do Metal Hub</b>
-  <p class="t2" style="white-space:normal;line-height:1.5">Cole o endereço do seu ajudante no Cloudflare (termina em <i>.workers.dev</i>). Ele mostra o nome da música e libera o botão 🎵.</p>
+  <p class="t2" style="white-space:normal;line-height:1.5">Cole o endereço do seu ajudante no Cloudflare (termina em <i>.workers.dev</i>). Ele mostra o nome da música que a rádio está tocando.</p>
   <input class="field" id="cfgUrl" placeholder="https://metalhub-radio.SEUNOME.workers.dev" inputmode="url" autocomplete="off">
   <div id="cfgSt" class="t2" style="margin:8px 2px;white-space:normal"></div>
   <div style="display:flex;gap:8px;justify-content:flex-end"><button class="lnk" id="cfgTest">Testar</button><button class="lnk" id="cfgX">Fechar</button><button class="btn" id="cfgOk" style="padding:8px 14px">Salvar</button></div>
@@ -117,8 +112,6 @@ nav button.on{color:#fff;text-shadow:0 0 10px var(--red)}nav button.on i{filter:
   <div id="nowSong"></div>
   <canvas id="wave"></canvas>
   <div id="nowState"></div>
-  <button id="idBtn">🎵 Que música é essa?</button>
-  <div id="idRes"></div>
 </section>
 
 <section class="view" id="vSearch">
@@ -129,7 +122,7 @@ nav button.on{color:#fff;text-shadow:0 0 10px var(--red)}nav button.on i{filter:
 </section>
 
 <section class="view" id="vFav"><div class="hdr"><h2>Favoritas</h2><button class="lnk" id="favSort"></button></div><div id="favTip" class="t2" style="margin:-4px 16px 8px;display:none">Segure ☰ e arraste para mudar a ordem</div><div class="scroll" id="fList"></div></section>
-<section class="view" id="vRec"><div class="hdr"><h2>Recentes</h2><button class="lnk" id="recClr">Limpar tudo</button></div><div class="scroll"><div id="idList"></div><div id="rList"></div></div></section>
+<section class="view" id="vRec"><div class="hdr"><h2>Recentes</h2><button class="lnk" id="recClr">Limpar tudo</button></div><div class="scroll" id="rList"></div></section>
 
 <section class="view" id="vMap">
   <div id="mapBox"><canvas id="mapCv"></canvas><div id="mapMsg"></div>
@@ -180,14 +173,14 @@ function toggleFav(r){if(!r)return;if(isFav(r)){favs=favs.filter(f=>f.id!==r.id)
 const aud=$('aud');let tok=0;
 async function play(r){if(!r)return;cur=r;ls.set('last',r);const my=++tok;
   recs=[r,...recs.filter(x=>x.id!==r.id)].slice(0,30);ls.set('recs',recs);
-  aud.src=r.url;song='';songFor=null;$('nowSong').textContent='';$('idRes').classList.remove('on');setState('load');renderAll();mediaMeta();
+  aud.src=r.url;song='';songFor=null;$('nowSong').textContent='';setState('load');renderAll();mediaMeta();
   rb('/json/url/'+encodeURIComponent(r.id)).catch(()=>{});
   try{await aud.play();if(my===tok)setState('play')}
   catch(e){if(my!==tok||e.name==='AbortError')return;setState('stop');toast('Esta rádio não respondeu. Tente outra.')}}
 function pause(){aud.pause();aud.removeAttribute('src');aud.load();setState('stop')}   // ao voltar, retoma ao vivo
 function toggle(){if(!cur)return showView('vSearch');playing||$('play').classList.contains('load')?pause():play(cur)}
 function setState(s){playing=s==='play';$('play').classList.toggle('load',s==='load');$('play').textContent=s==='stop'?'▶':'❚❚';
-  idBtnUpd();if(s==='play'&&helper&&!icyT)icyPoll();if(s==='stop'){clearTimeout(icyT);icyT=0}
+  if(s==='play'&&helper&&!icyT)icyPoll();if(s==='stop'){clearTimeout(icyT);icyT=0}
   $('nowState').textContent=s==='load'?'CONECTANDO…':s==='play'?'● AO VIVO':'';if('mediaSession' in navigator)navigator.mediaSession.playbackState=s==='stop'?'paused':'playing'}
 aud.addEventListener('playing',()=>setState('play'));aud.addEventListener('waiting',()=>playing&&setState('load'));
 aud.addEventListener('error',()=>{if(aud.getAttribute('src')&&cur){setState('stop');toast('A rádio caiu ou está fora do ar.')}});
@@ -243,7 +236,6 @@ function renderAll(){
   $('favSort').textContent=favMode==='alpha'?'Ordem: A–Z':'Ordem: manual';$('favSort').style.display=favs.length>1?'':'none';$('favTip').style.display=favMode==='manual'&&favs.length>1?'':'none';
   $('fList').innerHTML=favs.length?favView().map((r,i)=>rowHTML(r,i,'f')).join(''):'<div class="hint">Toque na ☆ de uma rádio para guardar aqui.</div>';
   $('recClr').style.display=recs.length?'':'none';
-  $('idList').innerHTML=idHist.length?'<div class="sec">🎵 Músicas identificadas</div>'+idHist.map((x,i)=>`<div class="idrow"><span class="ic">♪</span><div class="tt"><div class="t1">${esc(x.a)} – ${esc(x.t)}</div><div class="t2">${esc(x.radio)} · ${new Date(x.quando).toLocaleString('pt-BR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'})}</div></div>${x.sp?`<a href="${esc(x.sp)}" target="_blank" rel="noopener">Spotify</a>`:''}<button class="xb" data-idx="${i}">✕</button></div>`).join('')+'<div class="sec" style="margin-top:14px">📻 Rádios</div>':'';
   $('rList').innerHTML=recs.length?recs.map((r,i)=>rowHTML(r,i,'r')).join(''):'<div class="hint">As rádios que você ouvir aparecem aqui.</div>';
   if(mp.on)mapDraw()}
 $('nowImg').onerror=()=>$('logoBox').classList.remove('has');
@@ -266,7 +258,7 @@ $('favSort').onclick=()=>{favMode=favMode==='alpha'?'manual':'alpha';ls.set('fav
   L.addEventListener('pointerup',end);L.addEventListener('pointercancel',end)})();
 
 /* ---------- ajudante: nome da musica (ICY) e reconhecimento pelo som ---------- */
-let helper=ls.get('helper',''),song='',songFor=null,icyT=0,idHist=ls.get('idHist',[]);
+let helper=ls.get('helper',''),song='',songFor=null,icyT=0;
 const hUrl=p=>helper.replace(/\/+$/,'')+p;
 function songSet(v){song=v||'';$('nowSong').textContent=song?'♪ '+song:'';renderAll();mediaMeta()}
 async function icyPoll(){clearTimeout(icyT);const r=cur;if(!helper||!r||!playing)return;
@@ -274,22 +266,9 @@ async function icyPoll(){clearTimeout(icyT);const r=cur;if(!helper||!r||!playing
     const v=String(j.t||'').trim(),ok=v&&!/^[-\s]*$/.test(v)&&!/^(unknown|n\/a|null)$/i.test(v)&&v.toLowerCase()!==r.name.toLowerCase();
     songFor=r.id;if((ok?v:'')!==song)songSet(ok?v:'')}catch(e){}
   if(cur===r&&playing)icyT=setTimeout(icyPoll,20000);else icyT=0}
-function idBtnUpd(){$('idBtn').classList.toggle('on',!!helper&&!!cur&&playing)}
-$('idBtn').onclick=async()=>{const r=cur;if(!r||!helper)return;const b=$('idBtn');b.disabled=true;b.textContent='🎧 Ouvindo a rádio…';
-  const box=$('idRes');box.classList.remove('on');
-  try{const res=await fetch(hUrl('/id'),{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({u:r.url})});const j=await res.json();
-    if(j.erro)throw new Error(j.erro);
-    if(!j.achou){box.innerHTML='<b>Não reconheci</b><span class="t2">Pode ser locução, vinheta ou música fora da base. Tente de novo daqui a pouco.</span>'}
-    else{const it={t:j.titulo,a:j.artista,al:j.album,ano:j.ano,sp:j.spotify,radio:r.name,quando:Date.now()};
-      idHist=[it,...idHist.filter(x=>!(x.t===it.t&&x.a===it.a))].slice(0,50);ls.set('idHist',idHist);
-      box.innerHTML=`<b>${esc(j.artista)} – ${esc(j.titulo)}</b><span class="t2">${esc([j.album,j.ano].filter(Boolean).join(' · '))}</span>${j.spotify?`<div style="margin-top:6px"><a href="${esc(j.spotify)}" target="_blank" rel="noopener">▶ Abrir no Spotify</a></div>`:''}`;renderAll()}
-    box.classList.add('on')}
-  catch(e){toast('Não deu para reconhecer: '+e.message)}
-  b.disabled=false;b.textContent='🎵 Que música é essa?'};
-document.addEventListener('click',e=>{const x=e.target.closest('[data-idx]');if(!x)return;idHist.splice(+x.dataset.idx,1);ls.set('idHist',idHist);renderAll()});
 $('cfgBtn').onclick=()=>{$('cfgUrl').value=helper;$('cfgSt').textContent='';$('cfg').classList.add('on')};
 $('cfgX').onclick=()=>$('cfg').classList.remove('on');
-$('cfgOk').onclick=()=>{helper=$('cfgUrl').value.trim();ls.set('helper',helper);$('cfg').classList.remove('on');idBtnUpd();icyPoll();toast(helper?'Ajudante salvo':'Ajudante removido')};
+$('cfgOk').onclick=()=>{helper=$('cfgUrl').value.trim();ls.set('helper',helper);$('cfg').classList.remove('on');icyPoll();toast(helper?'Ajudante salvo':'Ajudante removido')};
 $('cfgTest').onclick=async()=>{const u=$('cfgUrl').value.trim().replace(/\/+$/,'');$('cfgSt').textContent='Testando…';
   try{const j=await (await fetch(u+'/',{cache:'no-store'})).json();$('cfgSt').textContent=j.ok?'✅ Ajudante respondendo!':'Respondeu, mas não parece o ajudante: '+JSON.stringify(j).slice(0,80)}
   catch(e){$('cfgSt').textContent='❌ Não respondeu ('+e.message+'). Confira o endereço.'}};
