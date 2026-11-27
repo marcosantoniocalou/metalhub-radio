@@ -98,7 +98,7 @@ nav button.on{color:#fff;text-shadow:0 0 10px var(--red)}nav button.on i{filter:
 </style>
 </head>
 <body>
-<header><div class="logo">Metal Hub<small>RÁDIO</small></div><span style="flex:1"></span><a class="hbtn" id="shzBtn" aria-label="Abrir o Shazam" title="Identificar a música no Shazam">S</a><button class="hbtn" id="cfgBtn" aria-label="Configurar">⚙</button></header>
+<header><div class="logo">Metal Hub<small>RÁDIO</small></div><span style="flex:1"></span><a class="hbtn" id="shzBtn" href="#" aria-label="Abrir o Shazam" title="Identificar a música no Shazam">S</a><button class="hbtn" id="cfgBtn" aria-label="Configurar">⚙</button></header>
 <div id="cfg"><div class="card"><b>Ajudante do Metal Hub</b>
   <p class="t2" style="white-space:normal;line-height:1.5">Cole o endereço do seu ajudante no Cloudflare (termina em <i>.workers.dev</i>). Ele mostra o nome da música que a rádio está tocando.</p>
   <input class="field" id="cfgUrl" placeholder="https://metalhub-radio.SEUNOME.workers.dev" inputmode="url" autocomplete="off">
@@ -274,9 +274,14 @@ $('cfgTest').onclick=async()=>{const u=$('cfgUrl').value.trim().replace(/\/+$/,'
   try{const j=await (await fetch(u+'/',{cache:'no-store'})).json();$('cfgSt').textContent=j.ok?'✅ Ajudante respondendo!':'Respondeu, mas não parece o ajudante: '+JSON.stringify(j).slice(0,80)}
   catch(e){$('cfgSt').textContent='❌ Não respondeu ('+e.message+'). Confira o endereço.'}};
 
-/* ---------- botao do Shazam: abre o app ja instalado e manda identificar (a radio continua tocando) ---------- */
-$('shzBtn').href='intent:#Intent;action=com.shazam.android.intent.actions.START_TAGGING;package=com.shazam.android;'
-  +'S.browser_fallback_url='+encodeURIComponent('https://play.google.com/store/apps/details?id=com.shazam.android')+';end';
+/* ---------- botao do Shazam: abre o app ja instalado (a radio continua tocando).
+   O Shazam nao documenta um link para abrir o app, entao tentamos alguns em sequencia;
+   se um nao abrir, o Android devolve para esta pagina (#shzfail) e tentamos o proximo. ---------- */
+const SHZ=['intent://#Intent;scheme=shazam;package=com.shazam.android','intent://www.shazam.com/#Intent;scheme=https;package=com.shazam.android','intent://www.shazam.com/myshazam#Intent;scheme=https;package=com.shazam.android'];
+function shzTry(i){if(i>=SHZ.length){toast('Não consegui abrir o Shazam por aqui. Use a bolinha do Pop-Up Shazam ou o atalho na barra de notificações.');return}
+  location.href=SHZ[i]+';S.browser_fallback_url='+encodeURIComponent(location.origin+location.pathname+'#shzfail'+i)+';end'}
+$('shzBtn').removeAttribute('href');$('shzBtn').onclick=e=>{e.preventDefault();shzTry(0)};
+addEventListener('hashchange',()=>{const m=/^#shzfail(\d)$/.exec(location.hash);if(!m)return;history.replaceState(null,'',location.pathname+location.search);shzTry(+m[1]+1)});
 
 /* ---------- busca ---------- */
 const CHIPS=[['🇧🇷 Mais ouvidas','top'],['Rock','tag:rock'],['Metal','tag:metal'],['Heavy Metal','tag:heavy metal'],['Hard Rock','tag:hard rock'],['Classic Rock','tag:classic rock'],['Kiss FM','kiss fm'],['🌎 Mundo','world']];
