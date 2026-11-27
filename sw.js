@@ -1,5 +1,5 @@
 // Metal Hub Radio: guarda a "casca" do app para abrir rapido (o audio sempre vem ao vivo da radio)
-const C = 'mhr-v7';
+const C = 'mhr-v8';
 const SHELL = ['./', 'index.html', 'manifest.json', 'bg.jpg', 'icon-192.png', 'icon-512.png'];
 self.addEventListener('install', e => { e.waitUntil(caches.open(C).then(c => c.addAll(SHELL)).then(() => self.skipWaiting())); });
 self.addEventListener('activate', e => { e.waitUntil(caches.keys().then(ks => Promise.all(ks.filter(k => k !== C).map(k => caches.delete(k)))).then(() => self.clients.claim())); });
